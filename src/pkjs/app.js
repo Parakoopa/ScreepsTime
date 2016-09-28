@@ -129,14 +129,14 @@ var doScreepsMemory = function(callback) {
     var r3 = mem[3] || {};
     info.vibrate = mem['vibrate'] || 0;
         
-    info.text = [r0.text, r1.text, r2.text, r3.text];
-    info.progress = [r0.progress || null, r1.progress || null, r2.progress || null, r3.progress || null];
-    info.textColor = [r0.textColor, r1.textColor, r2.textColor, r3.textColor];
-    info.textSecondColor = [r0.textSecondColor, r1.textSecondColor, r2.textSecondColor, r3.textSecondColor];
-    info.overColor = [r0.bgColor, r1.bgColor, r2.bgColor, r3.bgColor];
-    info.underColor = [r0.bgSecondColor, r1.bgSecondColor, r2.bgSecondColor, r3.bgSecondColor];
-    info.blink = [r0.blink, r1.blink, r2.blink, r3.blink];
-    info.bold = [r0.bold, r1.bold, r2.bold, r3.bold];
+    info.text = [r0.text || "", r1.text || "", r2.text || "", r3.text || ""];
+    info.progress = [r0.progress || 0, r1.progress || 0, r2.progress || 0, r3.progress || 0];
+    info.textColor = [r0.textColor || "#000000", r1.textColor || "#000000", r2.textColor || "#000000", r3.textColor || "#000000"];
+    info.textSecondColor = [r0.textSecondColor || "#000000", r1.textSecondColor || "#000000", r2.textSecondColor || "#000000", r3.textSecondColor || "#000000"];
+    info.overColor = [r0.bgColor || "#000000", r1.bgColor || "#000000", r2.bgColor || "#000000", r3.bgColor || "#000000"];
+    info.underColor = [r0.bgSecondColor || "#000000", r1.bgSecondColor || "#000000", r2.bgSecondColor || "#000000", r3.bgSecondColor || "#000000"];
+    info.blink = [r0.blink || false, r1.blink || false, r2.blink || false, r3.blink || false];
+    info.bold = [r0.bold || false, r1.bold || false, r2.bold || false, r3.bold || false];
     
     for ( var i = 0; i < 4; i++ ) {
       if ( info.progress[i] !== null ) info.progress[i] = Math.round(info.progress[i]);
