@@ -1,0 +1,60 @@
+{
+    "author": "Brian Haase",
+    "dependencies": {
+        "pebble-clay": "^1.0.0"
+    },
+    "keywords": [],
+    "name": "screeps-time",
+    "pebble": {
+        "capabilities": [
+            "location",
+            "configurable"
+        ],
+        "displayName": "Screeps Time",
+        "enableMultiJS": true,
+        "messageKeys": [
+            "CONFIG_BLUETOOTH_DISCONNECT",
+            "CONFIG_BLUETOOTH_RECONNECT",
+            "CONFIG_EMAIL",
+            "CONFIG_PASSWORD",
+            "CONFIG_WAKE_ON_CONNECT",
+            "CONFIG_WAKE_ON_DISCONNECT",
+            "CONFIG_USE_WEATHER",
+            "CONFIG_WEATHER_API_KEY",
+            "CONFIG_WEATHER_CITYID",
+            "CONFIG_USE_FAHRENHEIT",
+            "WEATHER",
+            "SCREEPS_CONNECTED",
+            "SCREEPS_MAIL",
+            "REQUEST_SCREEPS_API",
+            "REQUEST_WEATHER",
+            "SCREEPS_TEXT[4]",
+            "SCREEPS_PROGRESS[4]",
+            "SCREEPS_TEXT_COLOR[4]",
+            "SCREEPS_TEXT2_COLOR[4]",
+            "SCREEPS_BLINK[4]",
+            "SCREEPS_BOLD[4]",
+            "SCREEPS_OVER_COLOR[4]",
+            "SCREEPS_UNDER_COLOR[4]",
+            "SCREEPS_VIBRATE",
+            "CONFIG_BATTERY_RAIL",
+            "CONFIG_BATTERY_THRESHOLD",
+            "CONFIG_MAIL_RAIL",
+            "CONFIG_MAIL_SHOW",
+            "ALERT_MISSING_CONFIG"
+        ],
+        "projectType": "native",
+        "resources": {
+            "media": []
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "basalt"
+        ],
+        "uuid": "5407733b-2a3e-4315-88f1-0b22e8fe6ca0",
+        "watchapp": {
+            "watchface": true
+        }
+    },
+    "version": "0.2.0"
+}
