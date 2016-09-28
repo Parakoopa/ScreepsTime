@@ -66,5 +66,17 @@ Quick notes:
 * New Mail will only override if you have new unread messages waiting in-game.
 * Battery has a threshold - It will only draw if the battery is <= the specified threshold. You can use this to configure it to never show, always show, or simply show when it's starting to get low.
 
+# Reproducing the Sample
+For those of you who want a quick demo, or to recreate the view in the app store screenshot, you can use this payload as a test dummy:
+```
+Memory.pebble = {
+	vibrate: 0,
+	0: { progress: 0, bold: false, blink: false, bgColor: "#0000FF", bgSecondColor: null, textColor: "#CCCCCC", textSecondColor: null, text: "Screeps AI Running" },
+	1: { progress: 30, bold: true, blink: false, bgColor: "#55AA00", bgSecondColor: "#005500", textColor: "#CCCCCC", textSecondColor: null, text: "Job 1: 30%" },
+	2: { progress: 60, bold: true, blink: false, bgColor: "#0000FF", bgSecondColor: "#000066", textColor: "#CCCCCC", textSecondColor: null, text: "Avg CPU: 61.3/100" },
+	3: { progress: 70, bold: false, blink: false, bgColor: "#0000FF", bgSecondColor: "#000066", textColor: "#CCCCCC", textSecondColor: null, text: "Bucket: 7357" },
+};
+```
+
 # Questions / Issues
 You can submit issues or changes to this repo, or you can contact me on the Screeps slack channel as user 'Camedo'. 
