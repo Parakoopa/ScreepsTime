@@ -60,7 +60,7 @@ Each rail displays information on the watchface. The rails are in order from top
 ```
 
 # Choosing Colors
-Please be aware that the Pebble is a little picky about colors as well. Even though they are passed as HTML color codes, there is a limited palette of options. You can find a lot of the valid ones at the following pebble developer site:
+Please be aware that the Pebble is a little picky about colors as well. Even though they are passed as HTML color codes, there is a limited palette of options. You can find a lot of the valid ones at the following pebble developer site:  
 [Pebble Developer - Color Picker](https://developer.pebble.com/guides/tools-and-resources/color-picker/)
 
 # Optional Settings
