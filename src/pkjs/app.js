@@ -50,8 +50,9 @@ var xhrScreepsRequest = function (url, type, callback, data) {
 
 var doScreepsLogin = function(callback) {
   xhrScreepsRequest(prefix + "auth/signin", 'POST', function(res) {
-	  	console.log("LOGIN RESPONSE:");
+	  	console.log("LOGIN RESPONSE:");  
       console.log(JSON.stringify(res, null, 2));
+      console.log("LOGIN STATE: " + (res.token ? true : false));
 	  	xToken = res.token;
 	  	callback(res.token ? true : false);
   }, { "email": localStorage.getItem('email'), "password": localStorage.getItem('password') });  
@@ -101,20 +102,27 @@ function GColor(base) {
 var doScreepsMemory = function(callback) {
 	xhrScreepsRequest(prefix + "user/memory?path=pebble", 'GET', function(res) {
 		if ( !res.ok ) {
-			callback();
+			callback(true);
 			return;
 		}
-		
-		var unpacked = decodeBase64(res.data.substring(3));
-		var charData = unpacked.split('').map(function(x) { return x.charCodeAt(0); });			
-		var binData = new Uint8Array(charData);
-		var data        = pako.inflate(binData);
-		var strData     = String.fromCharCode.apply(null, new Uint16Array(data));
-		
-		var mem = JSON.parse(strData);
-		console.log("Memory block downloaded and decoded from Screeps API");
-    console.log(JSON.stringify(mem, null, 2));
-       
+    
+    try {
+  		var unpacked = decodeBase64(res.data.substring(3));
+  		var charData = unpacked.split('').map(function(x) { return x.charCodeAt(0); });			
+  		var binData = new Uint8Array(charData);
+  		var data        = pako.inflate(binData);
+  		var strData     = String.fromCharCode.apply(null, new Uint16Array(data));
+  		
+  		var mem = JSON.parse(strData);
+  		console.log("Memory block downloaded and decoded from Screeps API");
+      console.log(JSON.stringify(mem, null, 2));
+    } catch(e) {
+      console.log("Error occured downloading Memory block from Screeps API");
+      return callback(true);
+    }       
+    
+    if ( !mem[0] && !mem[1] && !mem[2] && !mem[3] ) return callback(true);
+    
     var r0 = mem[0] || {};
     var r1 = mem[1] || {};
     var r2 = mem[2] || {};
@@ -143,7 +151,6 @@ var doScreepsMemory = function(callback) {
 }
 
 function dispatchScreepsInfo() {  
-  // TODO: .. Send appMessages
   var dict = {};
   if ( info.unreadMessages ) dict[keys["SCREEPS_MAIL"]] = info.unreadMessages;
 
@@ -189,16 +196,53 @@ function getScreepsData() {
     info.loginSuccess = success;
     if ( success ) {
       doScreepsUnreadMessage(function() {
-        doScreepsMemory(function() {
-          dispatchScreepsInfo();
+        doScreepsMemory(function(error) {
+          if ( !error ) dispatchScreepsInfo();
+          if ( error ) sendMissingMemoryNotice();                             
         });
       });
     } else {
-      // TODO: Authentication failure, send notice to the watch.      
-      info.text = ["Screeps.com", "Login Failed", "Check Settings"];
-      dispatchScreepsInfo();
+      // Authentication failure, send notice to the watch.      
+      sendBadScreepsLogin();
     }
   })
+}
+
+function sendBadScreepsLogin() {  
+  console.log("*** Sending Bad Screeps Login");
+  var cBlack = GColor("#000000");
+  var cWhite = GColor("#FFFFFF");
+  var cRed = GColor("#FF0000");
+  
+  info = {};
+  info.text = ["", "Bad Credentials", "Check Config", "" ];
+  info.bold = [true, true, true, true];
+  info.textColor = [cBlack, cRed, cRed, cBlack];
+  info.underColor = [cBlack, cBlack, cBlack, cBlack];
+  info.overColor = [cBlack, cBlack, cBlack, cBlack];
+  info.progress = [0, 0, 0, 0];
+  info.textSecondColor = [cBlack, cBlack, cBlack, cBlack];
+  info.blink = [false, false, false, false];
+  
+  dispatchScreepsInfo();
+}
+
+function sendMissingMemoryNotice() {  
+  var cBlack = GColor("#000000");
+  var cWhite = GColor("#FFFFFF");
+  var cRed = GColor("#FF0000");
+  
+  info = {};
+  info.text = ["Screeps API:", "Unable to find", "'Memory.pebble'", "Please Check Docs" ];
+  info.bold = [true, true, true, true];
+  info.textColor = [cRed, cRed, cRed, cRed];
+  info.underColor = [cBlack, cBlack, cBlack, cBlack];
+  info.overColor = [cBlack, cBlack, cBlack, cBlack];
+  info.progress = [0, 0, 0, 0];
+  info.textSecondColor = [cBlack, cBlack, cBlack, cBlack];
+  info.blink = [false, false, false, false];
+  
+  dispatchScreepsInfo();
 }
 
 Pebble.addEventListener('ready', function(e) {
@@ -246,7 +290,7 @@ Pebble.addEventListener('webviewclosed', function(e) {
 function locationSuccess(pos) {
   var myAPIKey = localStorage.getItem('weather_api_key');
   var myCityID = localStorage.getItem('weather_cityid');
-  var useFahrenheit = localStorage.getItem('use_fahrenheit');
+  var useFahrenheit = useFlag('use_fahrenheit');
   
   console.log("Location success, requesting from Openweathermap API...");
   if ( !myAPIKey ) {
@@ -280,6 +324,11 @@ function locationSuccess(pos) {
         console.log("locationSuccess: Failed to send to watch.");
       });
    });
+}
+
+function useFlag(flag_name) {
+  if ( localStorage.getItem(flag_name) == "False" || localStorage.getItem(flag_name) == "false" ) return false;
+  return true;
 }
 
 function locationError(err) {
