@@ -51,12 +51,17 @@ Each rail displays information on the watchface. The rails are in order from top
 { bold: true, bgColor: '#FFFFFF', textColor: '#000000', text: 'Sample rail' }
 
 // Will display a 70% progress bar of light blue over dark blue, with white text.
+// The bgColor is the 'progress bar' color, bgSecondaryColor will fill the remainder of the bar. 
 { progress: 70, bgColor: '#0000FF', bgSecondColor: '#000066', textColor: '#FFFFFF', text: "Progress bar' }
 
 // Will display a blinking bar - Colors alternate between primary and secondary every second.
 // This bar will blink as black on red, and red on black.
 { blink: true, bgColor: '#000000', bgSecondColor: '#FF0000', textColor: '#FF0000', textSecondColor: '#000000', text: "Blinking warning text" }
 ```
+
+# Choosing Colors
+Please be aware that the Pebble is a little picky about colors as well. Even though they are passed as HTML color codes, there is a limited palette of options. You can find a lot of the valid ones at the following pebble developer site:
+[Pebble Developer - Color Picker](https://developer.pebble.com/guides/tools-and-resources/color-picker/)
 
 # Optional Settings
 Additionally, there's two optional settings - New mail and Battery - that you can enable in the application settings within the Pebble App. They both include a 'rail override' - If the criteria is matched, the rail information will be drawn over the specified rail, regardless of what you sent with your payload. These are off by default.
