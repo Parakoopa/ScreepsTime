@@ -3,6 +3,8 @@ Pebble watchface that displays information from the MMORTS programming game 'Scr
 
 Uses the official API to connect and download the contents of "Memory.pebble", and uses it to drive up to four information rails on the watchface.
 
+[Download now on the Pebble App Store](https://apps.getpebble.com/applications/57ebe9ca8eaf90fc03000090)
+
 ## Compatibility
 The app store version is currently only built for Basalt (Pebble Time and Time Steel) - It runs on Pebble Time Round, but I had trouble with the emulator and haven't had time to 'clean up' the display to render decently. You're welcome to compile it and deploy to a round Pebble, it just won't look good at the moment.
 
