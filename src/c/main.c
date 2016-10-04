@@ -19,6 +19,8 @@ uint32_t PKEY_MAIL_SHOW = 6;
 uint32_t PKEY_MAIL_RAIL = 7;
 uint32_t PKEY_BATTERY_RAIL = 8;
 uint32_t PKEY_BATTERY_THRESHOLD = 9;
+uint32_t PKEY_BATTERY_MAIN = 10;
+uint32_t PKEY_BLUETOOTH_MAIN = 11;
 
 static Window *s_window;              // Main watchface window, rendering goes here.
 static Layer *s_parts;                // Layer containing the overlay fields.
@@ -137,6 +139,9 @@ static void request_screeps_data() {
 }
 
 static void bluetooth_callback(bool connected) {
+  // State changed, mark the window for redraw.
+  if ( s_bluetooth_connected != connected ) layer_mark_dirty(window_get_root_layer(s_window));
+  
   s_bluetooth_connected = connected;
 
   // Prevent vibrate on watchface first-run
@@ -151,6 +156,9 @@ static void bluetooth_callback(bool connected) {
 }
 
 static void battery_callback(BatteryChargeState state) {
+  // State changed, mark the window for redraw.
+  if ( s_battery_level != state.charge_percent ) layer_mark_dirty(window_get_root_layer(s_window));
+
   s_battery_level = state.charge_percent;  // Record the new battery level  
   s_battery_charging = state.is_charging;
   s_battery_plugged = state.is_plugged;
@@ -219,6 +227,8 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
     if ( tupper->key == MESSAGE_KEY_CONFIG_MAIL_RAIL ) persist_write_int(PKEY_MAIL_RAIL, myAtoi(tupper->value->cstring));
     if ( tupper->key == MESSAGE_KEY_CONFIG_BATTERY_RAIL ) persist_write_int(PKEY_BATTERY_RAIL, myAtoi(tupper->value->cstring));
     if ( tupper->key == MESSAGE_KEY_CONFIG_BATTERY_THRESHOLD ) persist_write_int(PKEY_BATTERY_THRESHOLD, myAtoi(tupper->value->cstring));
+    if ( tupper->key == MESSAGE_KEY_CONFIG_BATTERY_MAIN ) persist_write_bool(PKEY_BATTERY_MAIN, tupper->value->uint8);
+    if ( tupper->key == MESSAGE_KEY_CONFIG_BLUETOOTH_MAIN ) persist_write_bool(PKEY_BLUETOOTH_MAIN, tupper->value->uint8);
 
     if ( tupper->key == MESSAGE_KEY_CONFIG_BLUETOOTH_RECONNECT ) persist_write_int(PKEY_BT_RECONNECT, myAtoi(tupper->value->cstring));
     if ( tupper->key == MESSAGE_KEY_CONFIG_BLUETOOTH_DISCONNECT ) persist_write_int(PKEY_BT_DISCONNECT, myAtoi(tupper->value->cstring));
@@ -306,6 +316,8 @@ static void update_blink(struct tm *tick_time) {
     dirty = true;
   }
   
+  if ( s_battery_level <= 20 ) dirty = true;
+  
   if ( dirty ) layer_mark_dirty(window_get_root_layer(s_window));
 }
 
@@ -357,6 +369,38 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     // Draw our top layer.
     graphics_fill_rect(ctx, GRect(0, yOff[i], barWidth, 20), 0, GCornersAll);
   }  
+  
+  // Draw right-side battery meter
+  if ( persist_read_bool(PKEY_BATTERY_MAIN) ) {
+    static GColor bg;
+    static int bH;
+    if ( s_battery_level <= 10 ) s_battery_level = 10;
+    bH = (int)(((float)(74) / (float)(100)) * (float)(s_battery_level));
+    bg = GColorGreen;
+    if ( s_battery_level <= 40 ) bg = GColorChromeYellow;
+    if ( s_battery_level <= 20 ) bg = (blinking ? GColorRed : GColorWhite);  
+  
+    graphics_context_set_stroke_color(ctx, GColorDarkGray);
+    graphics_context_set_fill_color(ctx, GColorDarkGray);
+    graphics_fill_rect(ctx, GRect(bounds.size.w - 8, 45, 6, 76), 0, GCornersAll);
+    graphics_context_set_stroke_color(ctx, GColorBlack);
+    graphics_context_set_fill_color(ctx, GColorBlack);
+    graphics_fill_rect(ctx, GRect(bounds.size.w - 7, 46, 4, 74), 0, GCornersAll);  
+    graphics_context_set_stroke_color(ctx, bg);
+    graphics_context_set_fill_color(ctx, bg);
+    graphics_fill_rect(ctx, GRect(bounds.size.w - 7, 46+(74-bH), 4, bH), 0, GCornersAll);
+  }
+  
+  // Draw left-side bluetooth indicator.
+  if ( persist_read_bool(PKEY_BLUETOOTH_MAIN) ) {
+    graphics_context_set_stroke_color(ctx, GColorDarkGray);
+    graphics_context_set_fill_color(ctx, GColorDarkGray);
+    graphics_fill_rect(ctx, GRect(2, 45, 6, 76), 0, GCornersAll);
+    graphics_context_set_stroke_color(ctx, s_bluetooth_connected ? GColorBlue : GColorBlack);
+    graphics_context_set_fill_color(ctx, s_bluetooth_connected ? GColorBlue : GColorBlack);
+    graphics_fill_rect(ctx, GRect(3, 46, 4, 74), 0, GCornersAll);
+  }
+  
   // layer_mark_dirty(window_get_root_layer(s_window));
 }
 

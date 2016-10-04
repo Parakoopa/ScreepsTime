@@ -89,6 +89,16 @@ module.exports = [
 			},
       {
         "type": "text",
+        "defaultValue": "If this is enabled, a small sidebar will displayed to the right of the time. It colors changes as it drops and blinks when near empty."
+      },          
+      {
+				"type": "toggle",
+				"messageKey": "CONFIG_BATTERY_MAIN",
+				"label": "Show Battery Sidebar",
+				"defaultValue": true,
+			},        
+      {
+        "type": "text",
         "defaultValue": "If this is enabled, the specified rail data will be replaced with a battery progress bar. If on the same rail of as messages, messages will take priority."
       },          
 			{
@@ -188,6 +198,12 @@ module.exports = [
 				"type": "heading",
 				"defaultValue": "Bluetooth"
 			},
+      {
+				"type": "toggle",
+				"messageKey": "CONFIG_BLUETOOTH_MAIN",
+				"label": "Show Bluetooth Indicator",
+				"defaultValue": true,
+			},         
       {
 				"type": "toggle",
 				"messageKey": "CONFIG_WAKE_ON_CONNECT",

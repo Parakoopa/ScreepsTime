@@ -41,7 +41,9 @@
             "CONFIG_BATTERY_THRESHOLD",
             "CONFIG_MAIL_RAIL",
             "CONFIG_MAIL_SHOW",
-            "ALERT_MISSING_CONFIG"
+            "ALERT_MISSING_CONFIG",
+            "CONFIG_BATTERY_MAIN",
+            "CONFIG_BLUETOOTH_MAIN"
         ],
         "projectType": "native",
         "resources": {
@@ -56,5 +58,5 @@
             "watchface": true
         }
     },
-    "version": "0.2.0"
+    "version": "1.0.0"
 }
