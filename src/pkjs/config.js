@@ -35,8 +35,48 @@ module.exports = [
           "limit": "64"
         }
 			},      
+			{
+				"type": "select",
+				"messageKey": "CONFIG_POLL_SCREEPS",
+				"defaultValue": "1",
+				"label": "Poll API Every",
+				"options": [
+					{ 
+						"label": "1 Minute",
+						"value": "1" 
+					},
+					{ 
+						"label": "5 minutes",
+						"value": "5" 
+					},
+					{ 
+						"label": "10 minutes",
+						"value": "10" 
+					},
+					{ 
+						"label": "15 minutes",
+						"value": "15" 
+					},
+					{ 
+						"label": "30 minutes",
+						"value": "30" 
+					},
+					{ 
+						"label": "45 minutes",
+						"value": "45" 
+					},
+					{ 
+						"label": "1 Hour",
+						"value": "60" 
+					}
+				]
+			},   
+      {
+        "type": "text",
+        "defaultValue": "Reducing poll rate will help save battery life."
+      }      
     ]
-  },
+  },         
 	{
 		"type": "section",
 		"items": [
@@ -168,7 +208,43 @@ module.exports = [
 				"messageKey": "CONFIG_USE_FAHRENHEIT",
 				"label": "Use Fahrenheit",
 				"defaultValue": true,
-			},            
+			},      
+			{
+				"type": "select",
+				"messageKey": "CONFIG_POLL_WEATHER",
+				"defaultValue": "30",
+				"label": "Poll API Every",
+				"options": [
+					{ 
+						"label": "1 Minute",
+						"value": "1" 
+					},
+					{ 
+						"label": "5 minutes",
+						"value": "5" 
+					},
+					{ 
+						"label": "10 minutes",
+						"value": "10" 
+					},
+					{ 
+						"label": "15 minutes",
+						"value": "15" 
+					},
+					{ 
+						"label": "30 minutes",
+						"value": "30" 
+					},
+					{ 
+						"label": "45 minutes",
+						"value": "45" 
+					},
+					{ 
+						"label": "1 Hour",
+						"value": "60" 
+					}
+				]
+			},    
 			{
 				"type": "input",
 				"messageKey": "CONFIG_WEATHER_API_KEY",

@@ -2,15 +2,11 @@
 
 /*
  * REDUCING POWER CONSUMPTION:
- *  - Tick handler for MINUTE instead of SECOND where possible. This will require dynamically hooking/unhooking if we're still going to support 'blinking'.
- *  - Only transmit data back from the phone when the data value has changed.
  *  - Track the number of canvas redraws we're doing.
  * BUGS / PROBLEMS:
  *  - Sometimes 'stalls' and wont request? anymore updates until the watchface is reset. Time still displays correctly so it IS redrawing.
  * TODO List / Features:
- *  - Add 'Charging' state to battery bar when it applies.
- *  - Weather Interval config option.
- *  - API Interval config option.
+ *  - Option to vibrate on the hour?
  */
 
 static void rebind_tick_handler();
@@ -27,6 +23,8 @@ uint32_t PKEY_BATTERY_RAIL = 8;
 uint32_t PKEY_BATTERY_THRESHOLD = 9;
 uint32_t PKEY_BATTERY_MAIN = 10;
 uint32_t PKEY_BLUETOOTH_MAIN = 11;
+uint32_t PKEY_POLL_SCREEPS = 12;
+uint32_t PKEY_POLL_WEATHER = 13;
 
 // All of these have a length of 4, make sure you compensate.
 uint32_t PKEY_LAST_WEATHER = 49;
@@ -72,6 +70,9 @@ static bool requesting_screeps_data = true;
 static bool appReady = false;
 static bool firstData = false;
 static bool firstBTCheck = false;
+
+static int poll_screeps = 1;
+static int poll_weather = 30;
 
 // This automatically toggles every second, so we can redraw for blinking.
 static bool blinking;
@@ -214,12 +215,13 @@ static void bluetooth_callback(bool connected) {
 }
 
 static void battery_callback(BatteryChargeState state) {
-  // State changed, mark the window for redraw.
-  if ( s_battery_level != state.charge_percent ) layer_mark_dirty(window_get_root_layer(s_window));
-
   s_battery_level = state.charge_percent;  // Record the new battery level  
   s_battery_charging = state.is_charging;
   s_battery_plugged = state.is_plugged;
+  
+  // State changed, mark the window for redraw.
+  // if ( s_battery_level != state.charge_percent ) layer_mark_dirty(window_get_root_layer(s_window));
+  layer_mark_dirty(window_get_root_layer(s_window));  
 }
 
 static void vibrate_on_demand(int mode) {
@@ -293,6 +295,14 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
       light_enable_interaction(); // Hack on new config push to light the screen.      
       persist_write_bool(PKEY_MAIL_SHOW, tupper->value->uint8);
     }
+    if ( tupper->key == MESSAGE_KEY_CONFIG_POLL_SCREEPS ) {
+      persist_write_int(PKEY_POLL_SCREEPS, myAtoi(tupper->value->cstring));
+      poll_screeps = myAtoi(tupper->value->cstring);
+    } 
+    if ( tupper->key == MESSAGE_KEY_CONFIG_POLL_WEATHER ) {
+      persist_write_int(PKEY_POLL_WEATHER, myAtoi(tupper->value->cstring));
+      poll_weather = myAtoi(tupper->value->cstring);
+    } 
     if ( tupper->key == MESSAGE_KEY_CONFIG_MAIL_RAIL ) persist_write_int(PKEY_MAIL_RAIL, myAtoi(tupper->value->cstring));
     if ( tupper->key == MESSAGE_KEY_CONFIG_BATTERY_RAIL ) persist_write_int(PKEY_BATTERY_RAIL, myAtoi(tupper->value->cstring));
     if ( tupper->key == MESSAGE_KEY_CONFIG_BATTERY_THRESHOLD ) persist_write_int(PKEY_BATTERY_THRESHOLD, myAtoi(tupper->value->cstring));
@@ -404,8 +414,12 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     update_time();
     
     // Automatic updates.
-    if ( tick_time->tm_min % 30 == 0 ) request_weather();
-    request_screeps_data();  
+    if ( (poll_weather < 60) && (tick_time->tm_min % poll_weather) == 0 ) request_weather();
+    if ( (poll_screeps < 60) && (tick_time->tm_min % poll_screeps) == 0 ) request_screeps_data();  
+  }
+  if ( units_changed & HOUR_UNIT ) {
+    if ( poll_weather == 60 ) request_weather();
+    if ( poll_screeps == 60 ) request_screeps_data();
   }
 }
 
@@ -452,11 +466,16 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   if ( persist_read_bool(PKEY_BATTERY_MAIN) ) {
     static GColor bg;
     static int bH;
-    if ( s_battery_level <= 10 ) s_battery_level = 10;
-    bH = (int)(((float)(74) / (float)(100)) * (float)(s_battery_level));
-    bg = GColorGreen;
-    if ( s_battery_level <= 40 ) bg = GColorChromeYellow;
-    if ( s_battery_level <= 20 ) bg = GColorRed; // (blinking ? GColorRed : GColorWhite);  
+    if ( s_battery_charging || s_battery_plugged ) {
+      bH = 74;
+      bg = GColorCyan;
+    } else {
+      if ( s_battery_level <= 10 ) s_battery_level = 10;
+      bH = (int)(((float)(74) / (float)(100)) * (float)(s_battery_level));
+      bg = GColorGreen;
+      if ( s_battery_level <= 40 ) bg = GColorChromeYellow;
+      if ( s_battery_level <= 20 ) bg = GColorRed; // (blinking ? GColorRed : GColorWhite);  
+    }
   
     graphics_context_set_stroke_color(ctx, GColorDarkGray);
     graphics_context_set_fill_color(ctx, GColorDarkGray);
@@ -588,6 +607,11 @@ static void init() {
 	});
 	window_stack_push(s_window, true);
 
+  poll_screeps = persist_read_int(PKEY_POLL_SCREEPS);
+  poll_weather = persist_read_int(PKEY_POLL_WEATHER);
+  if ( poll_screeps <= 0 ) poll_screeps = 1;
+  if ( poll_weather <= 0 ) poll_screeps = 30;
+  
   /*
   UnobstructedAreaHandlers handlers = {
 		.change = unobstructed_change,

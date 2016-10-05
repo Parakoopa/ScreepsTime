@@ -43,7 +43,9 @@
             "CONFIG_MAIL_SHOW",
             "ALERT_MISSING_CONFIG",
             "CONFIG_BATTERY_MAIN",
-            "CONFIG_BLUETOOTH_MAIN"
+            "CONFIG_BLUETOOTH_MAIN",
+            "CONFIG_POLL_SCREEPS",
+            "CONFIG_POLL_WEATHER"
         ],
         "projectType": "native",
         "resources": {
