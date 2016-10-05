@@ -347,9 +347,10 @@ function locationError(err) {
 }
 
 function getWeather() {
-  console.log(localStorage.getItem('use_weather'));
-  if ( localStorage.getItem('use_weather') == "False" || localStorage.getItem('use_weather') == "false" ) {
+  var useWeather = useFlag('use_weather');
+  if ( !useWeather ) {
     console.log("PKit is skipping weather, disabled in settings.");
+    Pebble.sendAppMessage( { 'WEATHER': 'Screeps.com' }, function() { }, function() { });    
     return;
   }
 
