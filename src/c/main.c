@@ -5,6 +5,7 @@
  *  - Track the number of canvas redraws we're doing.
  * BUGS / PROBLEMS:
  *  - Sometimes 'stalls' and wont request? anymore updates until the watchface is reset. Time still displays correctly so it IS redrawing.
+ *  - Possible interval bug 'on the hour', may not be firing. Need to monitor.
  * TODO List / Features:
  *  - Option to vibrate on the hour?
  */
@@ -418,8 +419,10 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     if ( (poll_screeps < 60) && (tick_time->tm_min % poll_screeps) == 0 ) request_screeps_data();  
   }
   if ( units_changed & HOUR_UNIT ) {
-    if ( poll_weather == 60 ) request_weather();
-    if ( poll_screeps == 60 ) request_screeps_data();
+    // if ( poll_weather == 60 ) request_weather();
+    // if ( poll_screeps == 60 ) request_screeps_data();
+    request_weather();
+    request_screeps_data();
   }
 }
 
