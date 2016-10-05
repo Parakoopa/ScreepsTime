@@ -62,10 +62,6 @@ module.exports = [
 						"value": "30" 
 					},
 					{ 
-						"label": "45 minutes",
-						"value": "45" 
-					},
-					{ 
 						"label": "1 Hour",
 						"value": "60" 
 					}
@@ -234,10 +230,6 @@ module.exports = [
 					{ 
 						"label": "30 minutes",
 						"value": "30" 
-					},
-					{ 
-						"label": "45 minutes",
-						"value": "45" 
 					},
 					{ 
 						"label": "1 Hour",
