@@ -3,7 +3,7 @@ var clayConfig = require('./config');
 var clay = new Clay(clayConfig);
 
 var keys = require('message_keys');
-console.log(JSON.stringify(keys, null, 2));
+// console.log(JSON.stringify(keys, null, 2));
 
 require('./gcolor');
 var pako = require('./pako.js');
@@ -12,6 +12,7 @@ var xToken;
 var prefix = 'https://screeps.com/api/';
 
 var info = {};
+var lastInfo = {};
 
 var xhrRequest = function (url, type, callback) {
   var xhr = new XMLHttpRequest();
@@ -50,9 +51,9 @@ var xhrScreepsRequest = function (url, type, callback, data) {
 
 var doScreepsLogin = function(callback) {
   xhrScreepsRequest(prefix + "auth/signin", 'POST', function(res) {
-	  	console.log("LOGIN RESPONSE:");  
-      console.log(JSON.stringify(res, null, 2));
-      console.log("LOGIN STATE: " + (res.token ? true : false));
+	  	// console.log("LOGIN RESPONSE:");  
+      // console.log(JSON.stringify(res, null, 2));
+      console.log("Login to Screeps API was " + (res.token ? "successful." : "a catastrophic failure."));
 	  	xToken = res.token;
 	  	callback(res.token ? true : false);
   }, { "email": localStorage.getItem('email'), "password": localStorage.getItem('password') });  
@@ -115,7 +116,7 @@ var doScreepsMemory = function(callback) {
   		
   		var mem = JSON.parse(strData);
   		console.log("Memory block downloaded and decoded from Screeps API");
-      console.log(JSON.stringify(mem, null, 2));
+      // console.log(JSON.stringify(mem, null, 2));
     } catch(e) {
       console.log("Error occured downloading Memory block from Screeps API");
       return callback(true);
@@ -152,28 +153,38 @@ var doScreepsMemory = function(callback) {
 
 function dispatchScreepsInfo() {  
   var dict = {};
-  if ( info.unreadMessages ) dict[keys["SCREEPS_MAIL"]] = info.unreadMessages;
+  if ( lastInfo.unreadMessages != info.unreadMessages ) dict[keys["SCREEPS_MAIL"]] = info.unreadMessages;
 
   // Dispatch rows of data.
   for ( var i = 0; i < 4; i++ ) {
-    dict[keys["SCREEPS_TEXT"] + i] = info.text[i];
-    dict[keys["SCREEPS_PROGRESS"] + i] = info.progress[i];
-    dict[keys["SCREEPS_TEXT_COLOR"] + i] = info.textColor[i];
-    dict[keys["SCREEPS_TEXT2_COLOR"] + i] = info.textSecondColor[i];
-    dict[keys["SCREEPS_UNDER_COLOR"] + i] = info.underColor[i];
-    dict[keys["SCREEPS_OVER_COLOR"] + i] = info.overColor[i];
-    dict[keys["SCREEPS_BLINK"] + i] = info.blink[i];
-    dict[keys["SCREEPS_BOLD"] + i] = info.bold[i];
+    if ( lastInfo.text[i] != info.text[i] ) dict[keys["SCREEPS_TEXT"] + i] = info.text[i];
+    if ( lastInfo.progress[i] != info.progress[i] ) dict[keys["SCREEPS_PROGRESS"] + i] = info.progress[i];
+    if ( lastInfo.textColor[i] != info.textColor[i] ) dict[keys["SCREEPS_TEXT_COLOR"] + i] = info.textColor[i];
+    if ( lastInfo.textSecondColor[i] != info.textSecondColor[i] ) dict[keys["SCREEPS_TEXT2_COLOR"] + i] = info.textSecondColor[i];
+    if ( lastInfo.underColor[i] != info.underColor[i] ) dict[keys["SCREEPS_UNDER_COLOR"] + i] = info.underColor[i];
+    if ( lastInfo.overColor[i] != info.overColor[i] ) dict[keys["SCREEPS_OVER_COLOR"] + i] = info.overColor[i];
+    if ( lastInfo.blink[i] != info.blink[i] ) dict[keys["SCREEPS_BLINK"] + i] = info.blink[i];
+    if ( lastInfo.bold[i] != info.bold[i] ) dict[keys["SCREEPS_BOLD"] + i] = info.bold[i];
   }
-  dict[keys["SCREEPS_VIBRATE"]] = info.vibrate;
+  if ( lastInfo.vibrate != info.vibrate ) dict[keys["SCREEPS_VIBRATE"]] = info.vibrate;
   
-  console.log("Sending screeps information to watch...");
-  console.log(JSON.stringify(dict, null, 2));
-  Pebble.sendAppMessage( dict, function() { 
-    console.log("dispatchScreepsInfo: Sent to watch successfully.");
-  }, function() {
-    console.log("dispatchScreepsInfo: Failed to send to watch.");
-  });
+  lastInfo = info;
+  localStorage.setItem('last_info', JSON.stringify(lastInfo));
+  
+  // console.log(JSON.stringify(lastInfo, null, 2));
+  // console.log(JSON.stringify(info, null, 2));
+  // console.log(JSON.stringify(dict, null, 2));
+  
+  if ( Object.keys(dict).length > 0 ) {
+    console.log("Sending screeps information to watch...");
+    Pebble.sendAppMessage( dict, function() { 
+      console.log("dispatchScreepsInfo: Sent to watch successfully.");
+    }, function() {
+      console.log("dispatchScreepsInfo: Failed to send to watch.");
+    });
+  } else {
+    console.log("No data changed, nothing to send to watch...");
+  }
 }
 
 function getScreepsData() {
@@ -353,3 +364,36 @@ function getWeather() {
     {timeout: 15000, maximumAge: 60000}
   );
 }
+
+function defaultLastInfo(skipCache) {
+  var recoverData = localStorage.getItem('last_info');
+  
+  if ( recoverData && !skipCache ) {
+    try {
+      lastInfo = JSON.parse(recoverData);
+      console.log("Recovered stored last_info.");
+    } catch(e) {
+      console.log("Error attempting to recover stored last_info, using default data.");
+      defaultLastInfo(true);
+    }
+  } else {
+    console.log("Using default last_info.");
+    var cBlack = GColor("#000000");
+    var cWhite = GColor("#FFFFFF");
+    var cCobaltBlue = GColor("#0055AA");  
+    var cRed = GColor("#FF0000");  
+    
+    lastInfo.unreadMessages = 0;
+    lastInfo.vibrate = 0;
+    lastInfo.text = ["", "", "", "Connecting Phone"];
+    lastInfo.textColor = [cWhite, cWhite, cWhite, cWhite];
+    lastInfo.textSecondColor = [cBlack, cBlack, cBlack, cBlack];
+    lastInfo.overColor = [cBlack, cBlack, cBlack, cCobaltBlue];
+    lastInfo.underColor = [cBlack, cBlack, cBlack, cBlack];
+    lastInfo.progress = [0, 0, 0, 0];
+    lastInfo.blink = [false, false, false, false];
+    lastInfo.bold = [false, false, false, false];
+  }
+}
+
+defaultLastInfo();
