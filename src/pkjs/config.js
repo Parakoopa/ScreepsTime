@@ -1,7 +1,7 @@
 module.exports = [
 	{ 
     	"type": "heading", 
-    	"defaultValue": "Screeps Time 1.4",
+    	"defaultValue": "Screeps Time 1.5",
 		  "size": 1,
 	},
   {
