@@ -83,5 +83,11 @@ Memory.pebble = {
 };
 ```
 
+# Power Usage
+I'm still looking at ways to reduce power consumption. I've done some overhauling and optimization, but there's a few tips that will help:
+* Avoid using the 'Blinking' state. If any row is blinking, we have to run the tickHandler and redraw the canvas every second. If none of the rows are 'blink' tagged, then we switch to the MINUTE-tick handler, which reduces our wake time and total number of canvas redraws.
+* Polling Intervals can now be adjused to reduce how frequently the watch requests updates.
+* If your values remain the same between polls, we don't resend those values. The more static the payload, the less we transmit over bluetooth.
+
 # Questions / Issues
 You can submit issues or changes to this repo, or you can contact me on the Screeps slack channel as user 'Camedo'. 
