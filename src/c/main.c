@@ -26,6 +26,7 @@ uint32_t PKEY_BATTERY_MAIN = 10;
 uint32_t PKEY_BLUETOOTH_MAIN = 11;
 uint32_t PKEY_POLL_SCREEPS = 12;
 uint32_t PKEY_POLL_WEATHER = 13;
+uint32_t PKEY_DISPLAY_CACHE = 14;
 
 // All of these have a length of 4, make sure you compensate.
 uint32_t PKEY_LAST_WEATHER = 49;
@@ -93,11 +94,13 @@ static void persist_display() {
     persist_write_bool(PKEY_SCREEPS_BOLD + i, bold[i]);
   }
   persist_write_string(PKEY_LAST_WEATHER, weatherBuf);
+  persist_write_bool(PKEY_DISPLAY_CACHE, true);
 }
 
 // Reload our persisted display data.
 static void recover_display() {
   static int i;
+  if ( !persist_read_bool(PKEY_DISPLAY_CACHE) ) return;
   APP_LOG(APP_LOG_LEVEL_INFO, "Recovering display data...");
   for ( i = 0; i < 4; i++ ) {
     persist_read_string(PKEY_SCREEPS_TEXT + i, dynamicBuf[i], sizeof(dynamicBuf[i]));
