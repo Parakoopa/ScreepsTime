@@ -524,14 +524,12 @@ static void window_load(Window *window) {
   snprintf(dynamicBuf[3], sizeof(dynamicBuf[3]), "%s", "Connecting Phone");
   snprintf(weatherBuf, sizeof(weatherBuf), "%s", "Screeps.com");
   
-  bgColorOver[0] = GColorBlack;
-  bgColorOver[1] = GColorBlack;
-  bgColorOver[2] = GColorBlack;
+  for ( i = 0; i < 4; i++ ) {
+    bgColorOver[i] = GColorBlack;
+    bgColorUnder[i] = GColorBlack;
+    textColorBuf[i] = GColorWhite;
+  }
   bgColorOver[3] = GColorCobaltBlue;
-  bgColorUnder[0] = GColorBlack;
-  bgColorUnder[1] = GColorBlack;
-  bgColorUnder[2] = GColorBlack;
-  bgColorUnder[3] = GColorBlack;
   
   // Create our drawing canvas
   s_canvas = layer_create(bounds);
