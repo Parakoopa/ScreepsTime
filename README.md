@@ -6,9 +6,14 @@ Uses the official API to connect and download the contents of "Memory.pebble", a
 [Download now on the Pebble App Store](https://apps.getpebble.com/applications/57ebe9ca8eaf90fc03000090)
 
 ## Compatibility
-The app store version is currently only built for Basalt (Pebble Time and Time Steel) - It runs on Pebble Time Round, but I had trouble with the emulator and haven't had time to 'clean up' the display to render decently. You're welcome to compile it and deploy to a round Pebble, it just won't look good at the moment.
+Should run fine on Baslt, Chalk and Diorite devices. This is primarily tested on a Pebble Time, Pebble Time Round support was tested in emulator but should work fine. 
 
 Incompatible with Aplite due to payload and memory size restrictions. 
+
+## Round Watchfaces
+A note on round watchfaces - i've introduced support for them, but please be aware that due to the shape of the screen, real estate for information display is limited. I also didn't see a nice way to handle the progress bar displays, so be aware that if you use a progress display, the majority of it is 'off screen'. You may be better off either display a percentage in the text instead.
+
+The top most and bottom most rails (0 and 3) are pinched pretty hard, you won't be able to display much text there. 
 
 # Installing
 You can get the latest built version from the Pebble Appstore.
