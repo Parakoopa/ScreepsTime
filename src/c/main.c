@@ -1,6 +1,8 @@
 #include <pebble.h>
 
 /*
+ * Canvas dimensions for Pebble Time: 144x168
+ *
  * REDUCING POWER CONSUMPTION:
  *  - Track the number of canvas redraws we're doing.
  * BUGS / PROBLEMS:
@@ -9,6 +11,8 @@
  * TODO List / Features:
  *  - Option to vibrate on the hour?
  */
+
+static bool debugging = false;
 
 static void rebind_tick_handler();
 
@@ -73,13 +77,16 @@ static bool firstBTCheck = false;
 static int poll_screeps = 1;
 static int poll_weather = 30;
 
+static int w_offset = 0;
+static int h_offset = 0;
+
 // This automatically toggles every second, so we can redraw for blinking.
 static bool blinking;
 
 // Save our display data to persistant memory, to make watchface redraw faster when loading. (We'll still go grab up-to-date data)
 static void persist_display() {
   static int i;
-  APP_LOG(APP_LOG_LEVEL_INFO, "Saving display data...");
+  if ( debugging ) APP_LOG(APP_LOG_LEVEL_INFO, "Saving display data...");
   for ( i = 0; i < 4; i++ ) {
     persist_write_string(PKEY_SCREEPS_TEXT + i, dynamicBuf[i]);
     persist_write_int(PKEY_SCREEPS_TEXT_COLOR + i, textColorBuf[i].argb);
@@ -98,7 +105,7 @@ static void persist_display() {
 static void recover_display() {
   static int i;
   if ( !persist_read_bool(PKEY_DISPLAY_CACHE) ) return;
-  APP_LOG(APP_LOG_LEVEL_INFO, "Recovering display data...");
+  if ( debugging ) APP_LOG(APP_LOG_LEVEL_INFO, "Recovering display data...");
   for ( i = 0; i < 4; i++ ) {
     persist_read_string(PKEY_SCREEPS_TEXT + i, dynamicBuf[i], sizeof(dynamicBuf[i]));
     textColorBuf[i] = (GColor){.argb = ((uint8_t)(persist_read_int(PKEY_SCREEPS_TEXT_COLOR + i)))};
@@ -172,19 +179,19 @@ static void apply_special_rails() {
 
 static void request_weather() {
   if ( persist_read_bool(PKEY_USE_WEATHER) ) {
-    APP_LOG(APP_LOG_LEVEL_INFO, "Requesting weather...");
+    if ( debugging ) APP_LOG(APP_LOG_LEVEL_INFO, "Requesting weather...");
 
     DictionaryIterator *out;
     app_message_outbox_begin(&out);
     dict_write_uint8(out, MESSAGE_KEY_REQUEST_WEATHER, 1);
     app_message_outbox_send();    
   } else {
-    APP_LOG(APP_LOG_LEVEL_INFO, "Weather disabled, skipping request.");
+    if ( debugging ) APP_LOG(APP_LOG_LEVEL_INFO, "Weather disabled, skipping request.");
   }
 }
 
 static void request_screeps_data() {
-  APP_LOG(APP_LOG_LEVEL_INFO, "Requesting Screeps Data...");
+  if ( debugging ) APP_LOG(APP_LOG_LEVEL_INFO, "Requesting Screeps Data...");
 
   DictionaryIterator *out;
   app_message_outbox_begin(&out);
@@ -264,17 +271,18 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   was_blinking = is_blinking();
   
   // persist_write_bool(PKEY_RECEIVED, true);  
-  APP_LOG(APP_LOG_LEVEL_INFO, "inbox_received_handler starting");
+  if ( debugging ) APP_LOG(APP_LOG_LEVEL_INFO, "inbox_received_handler starting");
           
   Tuple *tupper = dict_read_first(iter);
   while (tupper) {    
-    APP_LOG(APP_LOG_LEVEL_INFO, "tupper key: %lu = %s (%ld)", (unsigned long)tupper->key, tupper->value->cstring, tupper->value->int32);  
+    if ( debugging ) APP_LOG(APP_LOG_LEVEL_INFO, "tupper key: %lu = %s (%ld)", (unsigned long)tupper->key, tupper->value->cstring, tupper->value->int32);  
     
     if ( tupper->key == MESSAGE_KEY_ALERT_MISSING_CONFIG ) {
-      snprintf(dynamicBuf[0], sizeof(dynamicBuf[0]), "%s", "Please Check Config");
-      snprintf(dynamicBuf[1], sizeof(dynamicBuf[1]), "%s", "in App Settings");
+      snprintf(dynamicBuf[0], sizeof(dynamicBuf[0]), "%s", PBL_IF_RECT_ELSE("Please Check Config", ""));
+      snprintf(dynamicBuf[1], sizeof(dynamicBuf[1]), "%s", PBL_IF_RECT_ELSE("in App Settings","Check Config"));
       snprintf(dynamicBuf[2], sizeof(dynamicBuf[2]), "%s", "");
       snprintf(dynamicBuf[3], sizeof(dynamicBuf[3]), "%s", "Not Configured");     
+      
       for ( i = 0; i < 4; i++ ) {
         bgColorOver[i] = GColorBlack;
         bgColorUnder[i] = GColorBlack;
@@ -347,23 +355,23 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   apply_special_rails();  
   layer_mark_dirty(window_get_root_layer(s_window));
   
-  APP_LOG(APP_LOG_LEVEL_INFO, "inbox_received_handler finished");
+  if ( debugging ) APP_LOG(APP_LOG_LEVEL_INFO, "inbox_received_handler finished");
 }
 
 static void inbox_dropped_callback(AppMessageResult reason, void *context) {
-  APP_LOG(APP_LOG_LEVEL_ERROR, "Message dropped!");
+  if ( debugging ) APP_LOG(APP_LOG_LEVEL_ERROR, "Message dropped!");
 }
 
 static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResult reason, void *context) {
-  APP_LOG(APP_LOG_LEVEL_ERROR, "Outbox send failed!");
+  if ( debugging ) APP_LOG(APP_LOG_LEVEL_ERROR, "Outbox send failed!");
 }
 
 static void outbox_sent_callback(DictionaryIterator *iterator, void *context) {
-  APP_LOG(APP_LOG_LEVEL_INFO, "Outbox send success!");
+  if ( debugging ) APP_LOG(APP_LOG_LEVEL_INFO, "Outbox send success!");
 }
 
 static void update_time() {
-  APP_LOG(APP_LOG_LEVEL_INFO, "update_time()");
+  if ( debugging ) APP_LOG(APP_LOG_LEVEL_INFO, "update_time()");
   // Get a tm structure
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
@@ -396,7 +404,7 @@ static void update_blink(struct tm *tick_time) {
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
-  APP_LOG(APP_LOG_LEVEL_ERROR, "********** Running Tick Handler **********");
+  if ( debugging ) APP_LOG(APP_LOG_LEVEL_ERROR, "********** Running Tick Handler **********");
   
   if ( is_blinking() ) update_blink(tick_time);
   
@@ -427,7 +435,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   const int yOff[4] = {0, 21, 125, 146};
   static int i;
   
-  APP_LOG(APP_LOG_LEVEL_INFO, "Redrawing canvas...");
+  if ( debugging ) APP_LOG(APP_LOG_LEVEL_INFO, "Redrawing canvas...");
   
   apply_special_rails();
   
@@ -437,7 +445,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     graphics_context_set_fill_color(ctx, (blink[i] && blinking) ? bgColorOver[i] : bgColorUnder[i]);
   
     // Draw our bottom layer.
-    graphics_fill_rect(ctx, GRect(0, yOff[i], bounds.size.w, 20), 0, GCornersAll);
+    graphics_fill_rect(ctx, GRect(0, yOff[i] + h_offset, bounds.size.w, 20), 0, GCornersAll);
 
     // Determine the width of our top layer based on progress.
     int barWidth = bounds.size.w;
@@ -451,7 +459,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     graphics_context_set_fill_color(ctx, (blink[i] && blinking) ? bgColorUnder[i] : bgColorOver[i]);
   
     // Draw our top layer.
-    graphics_fill_rect(ctx, GRect(0, yOff[i], barWidth, 20), 0, GCornersAll);
+    graphics_fill_rect(ctx, GRect(0, yOff[i] + h_offset, barWidth, 20), 0, GCornersAll);
   }  
   
   // Draw right-side battery meter
@@ -471,23 +479,23 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   
     graphics_context_set_stroke_color(ctx, GColorDarkGray);
     graphics_context_set_fill_color(ctx, GColorDarkGray);
-    graphics_fill_rect(ctx, GRect(bounds.size.w - 8, 45, 6, 76), 0, GCornersAll);
+    graphics_fill_rect(ctx, GRect(bounds.size.w - (8 + w_offset), (45 + h_offset), 6, 76), 0, GCornersAll);
     graphics_context_set_stroke_color(ctx, GColorBlack);
     graphics_context_set_fill_color(ctx, GColorBlack);
-    graphics_fill_rect(ctx, GRect(bounds.size.w - 7, 46, 4, 74), 0, GCornersAll);  
+    graphics_fill_rect(ctx, GRect(bounds.size.w - (7 + w_offset), (46 + h_offset), 4, 74), 0, GCornersAll);  
     graphics_context_set_stroke_color(ctx, bg);
     graphics_context_set_fill_color(ctx, bg);
-    graphics_fill_rect(ctx, GRect(bounds.size.w - 7, 46+(74-bH), 4, bH), 0, GCornersAll);
+    graphics_fill_rect(ctx, GRect(bounds.size.w - (7 + w_offset), (46 + h_offset)+(74-bH), 4, bH), 0, GCornersAll);
   }
   
   // Draw left-side bluetooth indicator.
   if ( persist_read_bool(PKEY_BLUETOOTH_MAIN) ) {
     graphics_context_set_stroke_color(ctx, GColorDarkGray);
     graphics_context_set_fill_color(ctx, GColorDarkGray);
-    graphics_fill_rect(ctx, GRect(2, 45, 6, 76), 0, GCornersAll);
+    graphics_fill_rect(ctx, GRect(2 + w_offset, (45 + h_offset), 6, 76), 0, GCornersAll);
     graphics_context_set_stroke_color(ctx, s_bluetooth_connected ? GColorBlue : GColorBlack);
     graphics_context_set_fill_color(ctx, s_bluetooth_connected ? GColorBlue : GColorBlack);
-    graphics_fill_rect(ctx, GRect(3, 46, 4, 74), 0, GCornersAll);
+    graphics_fill_rect(ctx, GRect(3 + w_offset, (46 + h_offset), 4, 74), 0, GCornersAll);
   }
   
   // layer_mark_dirty(window_get_root_layer(s_window));
@@ -499,6 +507,12 @@ static void window_load(Window *window) {
   // Get information about the Window
   Layer *window_layer = window_get_root_layer(window);
   bounds = layer_get_bounds(window_layer);
+  
+  // w_offset = PBL_IF_RECT_ELSE(0, 20);
+  w_offset = 0;
+  h_offset = 0;
+  if ( bounds.size.w > 144 ) w_offset = (int)((bounds.size.w - 144) / 2);
+  if ( bounds.size.h > 168 ) h_offset = (int)((bounds.size.h - 168) / 2);
   
   // bounds.origin.y += PBL_IF_RECT_ELSE(0, 50);
   
@@ -529,22 +543,22 @@ static void window_load(Window *window) {
   layer_mark_dirty(s_parts);  // Redraw us as soon as possible
   
   // Create our bounded TextLayers, configure them and add them to the layer.
-  s_time_layer = text_layer_create(GRect(0, 56, bounds.size.w, 50));
+  s_time_layer = text_layer_create(GRect(0, 56 + h_offset, bounds.size.w, 50));
   setup_text(s_time_layer, fonts_get_system_font(FONT_KEY_LECO_42_NUMBERS), GColorClear, GColorWhite, GTextAlignmentCenter, "--:--");
   layer_add_child(s_parts, text_layer_get_layer(s_time_layer));
 
-  s_weather_layer = text_layer_create(GRect(0, 46, bounds.size.w, 50));
+  s_weather_layer = text_layer_create(GRect(0, 46 + h_offset, bounds.size.w, 50));
   setup_text(s_weather_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14), GColorClear, GColorWhite, GTextAlignmentCenter, weatherBuf);
   layer_add_child(s_parts, text_layer_get_layer(s_weather_layer));
 
-  s_date_layer = text_layer_create(GRect(0, 100, bounds.size.w, 50));
+  s_date_layer = text_layer_create(GRect(0, 100 + h_offset, bounds.size.w, 50));
   setup_text(s_date_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD), GColorClear, GColorWhite, GTextAlignmentCenter, " ");
   layer_add_child(s_parts, text_layer_get_layer(s_date_layer));
   
-  s_dynamic_layer[0] = text_layer_create(GRect(0, 0, bounds.size.w, 50));
-  s_dynamic_layer[1] = text_layer_create(GRect(0, 21, bounds.size.w, 50));
-  s_dynamic_layer[2] = text_layer_create(GRect(0, 125, bounds.size.w, 50));
-  s_dynamic_layer[3] = text_layer_create(GRect(0, 146, bounds.size.w, 50));
+  s_dynamic_layer[0] = text_layer_create(GRect(0, 0 + h_offset, bounds.size.w, 50));
+  s_dynamic_layer[1] = text_layer_create(GRect(0, 21 + h_offset, bounds.size.w, 50));
+  s_dynamic_layer[2] = text_layer_create(GRect(0, 125 + h_offset, bounds.size.w, 50));
+  s_dynamic_layer[3] = text_layer_create(GRect(0, 146 + h_offset, bounds.size.w, 50));
 
   setup_text(s_dynamic_layer[0], fonts_get_system_font(FONT_KEY_GOTHIC_14), GColorClear, GColorWhite, GTextAlignmentCenter, dynamicBuf[0]);
   setup_text(s_dynamic_layer[1], fonts_get_system_font(FONT_KEY_GOTHIC_14), GColorClear, GColorWhite, GTextAlignmentCenter, dynamicBuf[1]);
@@ -580,10 +594,10 @@ static void window_unload(Window *window) {
 static void rebind_tick_handler() {
   tick_timer_service_unsubscribe();
   if ( is_blinking() ) {
-    APP_LOG(APP_LOG_LEVEL_INFO, "Binding tick_timer_service under SECOND_UNIT");
+    if ( debugging ) APP_LOG(APP_LOG_LEVEL_INFO, "Binding tick_timer_service under SECOND_UNIT");
     tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
   } else {
-    APP_LOG(APP_LOG_LEVEL_INFO, "Binding tick_timer_service under MINUTE_UNIT");
+    if ( debugging ) APP_LOG(APP_LOG_LEVEL_INFO, "Binding tick_timer_service under MINUTE_UNIT");
     tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
   }
 }

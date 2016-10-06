@@ -306,7 +306,8 @@ function locationSuccess(pos) {
   console.log("Location success, requesting from Openweathermap API...");
   if ( !myAPIKey ) {
     console.log("ERROR: Skipping weather send, no API key.");
-    return Pebble.sendAppMessage({'WEATHER': 'No Weather API Key'});
+    // return Pebble.sendAppMessage({'WEATHER': 'No Weather API Key'});
+    return Pebble.sendAppMessage({'WEATHER': 'Screeps.com'});
   }
   
   // Construct URL
