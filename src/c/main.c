@@ -68,9 +68,6 @@ static bool blink[4];
 static bool bold[4];
 static int last_vibrate = 0;
   
-static bool requesting_screeps_data = true;
-static bool appReady = false;
-static bool firstData = false;
 static bool firstBTCheck = false;
 
 static int poll_screeps = 1;
@@ -140,20 +137,6 @@ static void configurable_vibrate(uint32_t config_key) {
   if ( mode == 3 ) vibes_double_pulse();  
 }
 
-static void request_weather() {
-  if ( !appReady || !firstData ) return;
-  if ( persist_read_bool(PKEY_USE_WEATHER) ) {
-    APP_LOG(APP_LOG_LEVEL_INFO, "Requesting weather...");
-
-    DictionaryIterator *out;
-    app_message_outbox_begin(&out);
-    dict_write_uint8(out, MESSAGE_KEY_REQUEST_WEATHER, 1);
-    app_message_outbox_send();    
-  } else {
-    APP_LOG(APP_LOG_LEVEL_INFO, "Weather disabled, skipping request.");
-  }
-}
-
 static void apply_special_rails() {
   static int rail, bThreshold;
   
@@ -187,13 +170,21 @@ static void apply_special_rails() {
   }
 }
 
+static void request_weather() {
+  if ( persist_read_bool(PKEY_USE_WEATHER) ) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "Requesting weather...");
+
+    DictionaryIterator *out;
+    app_message_outbox_begin(&out);
+    dict_write_uint8(out, MESSAGE_KEY_REQUEST_WEATHER, 1);
+    app_message_outbox_send();    
+  } else {
+    APP_LOG(APP_LOG_LEVEL_INFO, "Weather disabled, skipping request.");
+  }
+}
+
 static void request_screeps_data() {
-  if ( !appReady || !firstData ) return;
-  if ( requesting_screeps_data ) return;
-  
-  // requesting_screeps_data = true;
-  
-  APP_LOG(APP_LOG_LEVEL_ERROR, "Requesting Screeps Data...");
+  APP_LOG(APP_LOG_LEVEL_INFO, "Requesting Screeps Data...");
 
   DictionaryIterator *out;
   app_message_outbox_begin(&out);
@@ -272,10 +263,8 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   static bool was_blinking;
   was_blinking = is_blinking();
   
-  firstData = true;
-  
   // persist_write_bool(PKEY_RECEIVED, true);  
-  APP_LOG(APP_LOG_LEVEL_ERROR, "inbox_received_handler starting");
+  APP_LOG(APP_LOG_LEVEL_INFO, "inbox_received_handler starting");
           
   Tuple *tupper = dict_read_first(iter);
   while (tupper) {    
@@ -327,10 +316,7 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
     
     // Row data containing screeps data.
     for ( i = 0; i < 4; i++ ) {
-      if ( tupper->key == (MESSAGE_KEY_SCREEPS_TEXT + i) ) {
-        snprintf(dynamicBuf[i], sizeof(dynamicBuf[i]), "%s", tupper->value->cstring);
-        requesting_screeps_data = false;
-      }
+      if ( tupper->key == (MESSAGE_KEY_SCREEPS_TEXT + i) ) snprintf(dynamicBuf[i], sizeof(dynamicBuf[i]), "%s", tupper->value->cstring);
       if ( tupper->key == (MESSAGE_KEY_SCREEPS_TEXT_COLOR + i) ) {
         textColorBuf[i] = GColorFromHEX(tupper->value->int32);        
         text_layer_set_text_color(s_dynamic_layer[i], textColorBuf[i]);
@@ -361,7 +347,7 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   apply_special_rails();  
   layer_mark_dirty(window_get_root_layer(s_window));
   
-  APP_LOG(APP_LOG_LEVEL_ERROR, "inbox_received_handler finished");
+  APP_LOG(APP_LOG_LEVEL_INFO, "inbox_received_handler finished");
 }
 
 static void inbox_dropped_callback(AppMessageResult reason, void *context) {
@@ -638,8 +624,6 @@ static void init() {
 	battery_callback(battery_state_service_peek());
   
   rebind_tick_handler();
-
-  appReady = true;
 }
 
 static void deinit() {
@@ -648,8 +632,6 @@ static void deinit() {
 
 int main(void) {
   mailCount = 0;
-  appReady = false;
-  firstData = false;
   
   init();
   app_event_loop();
