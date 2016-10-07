@@ -153,7 +153,10 @@ var doScreepsMemory = function(callback) {
 
 function dispatchScreepsInfo() {  
   var dict = {};
-  if ( lastInfo.unreadMessages != info.unreadMessages ) dict[keys["SCREEPS_MAIL"]] = info.unreadMessages;
+  if ( lastInfo.unreadMessages != info.unreadMessages ) {
+    defaultLastInfo(true);
+    dict[keys["SCREEPS_MAIL"]] = info.unreadMessages;
+  }
 
   // Dispatch rows of data.
   for ( var i = 0; i < 4; i++ ) {
@@ -385,17 +388,18 @@ function defaultLastInfo(skipCache) {
     var cCobaltBlue = GColor("#0055AA");  
     var cRed = GColor("#FF0000");  
     
-    lastInfo.unreadMessages = 0;
-    lastInfo.vibrate = 0;
+    lastInfo.unreadMessages = -1;
+    lastInfo.vibrate = -1;
     lastInfo.text = ["", "", "", "Connecting Phone"];
-    lastInfo.textColor = [cWhite, cWhite, cWhite, cWhite];
-    lastInfo.textSecondColor = [cBlack, cBlack, cBlack, cBlack];
-    lastInfo.overColor = [cBlack, cBlack, cBlack, cCobaltBlue];
-    lastInfo.underColor = [cBlack, cBlack, cBlack, cBlack];
-    lastInfo.progress = [0, 0, 0, 0];
+    lastInfo.textColor = [null, null, null, null];
+    lastInfo.textSecondColor = [null, null, null, null];
+    lastInfo.overColor = [null, null, null, null];
+    lastInfo.underColor = [null, null, null, null];
+    lastInfo.progress = [-1, -1, -1, -1];
     lastInfo.blink = [false, false, false, false];
     lastInfo.bold = [false, false, false, false];
   }
 }
 
-defaultLastInfo();
+// Disable the first-load cache, it's causing problems.
+defaultLastInfo(true);

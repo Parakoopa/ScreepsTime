@@ -545,6 +545,7 @@ static void window_load(Window *window) {
   // Create our bounded TextLayers, configure them and add them to the layer.
   s_time_layer = text_layer_create(GRect(0, 56 + h_offset, bounds.size.w, 50));
   setup_text(s_time_layer, fonts_get_system_font(FONT_KEY_LECO_42_NUMBERS), GColorClear, GColorWhite, GTextAlignmentCenter, "--:--");
+  // setup_text(s_time_layer, fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD), GColorClear, GColorWhite, GTextAlignmentCenter, "--:--");
   layer_add_child(s_parts, text_layer_get_layer(s_time_layer));
 
   s_weather_layer = text_layer_create(GRect(0, 46 + h_offset, bounds.size.w, 50));
