@@ -45,7 +45,8 @@
             "CONFIG_BATTERY_MAIN",
             "CONFIG_BLUETOOTH_MAIN",
             "CONFIG_POLL_SCREEPS",
-            "CONFIG_POLL_WEATHER"
+            "CONFIG_POLL_WEATHER",
+            "CONFIG_SERVER"
         ],
         "projectType": "native",
         "resources": {

@@ -17,11 +17,21 @@ module.exports = [
 			},  
 			{
 				"type": "input",
+				"messageKey": "CONFIG_SERVER",
+				"label": "Server (+ Port if private server)",
+				"defaultValue": "screeps.com",
+        "attributes": {
+          "type": "text",
+          "limit": "128"
+        }
+			},  
+			{
+				"type": "input",
 				"messageKey": "CONFIG_EMAIL",
-				"label": "Email Address",
+				"label": "Email Address (Username for private servers)",
 				"defaultValue": "",
         "attributes": {
-          "type": "email",
+          "type": "text",
           "limit": "128"
         }
 			},      

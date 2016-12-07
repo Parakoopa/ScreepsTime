@@ -9,10 +9,23 @@ require('./gcolor');
 var pako = require('./pako.js');
 
 var xToken;
-var prefix = 'https://screeps.com/api/';
 
 var info = {};
 var lastInfo = {};
+
+var getPrefix = function() {
+  var protocol = "http";
+  var serverUrl = localStorage.getItem('server') || "screeps.com";
+  if (serverUrl == "screeps.com") {
+    // TODO: Should propably allow HTTPS for custom servers as well.
+    protocol = "https";
+  }
+  return protocol+'://'+serverUrl+'/api/';
+};
+
+var officialServer = function() {
+  return !localStorage.getItem('server') || localStorage.getItem('server') == "screeps.com";
+};
 
 var xhrRequest = function (url, type, callback) {
   var xhr = new XMLHttpRequest();
@@ -27,7 +40,7 @@ var xhrRequest = function (url, type, callback) {
  * replace X-Token if a new one was supplied in a response.
  * Credit to Dormando for this. https://github.com/screepers/pcreeps/blob/master/src/js/app.js
  */
-var xhrScreepsRequest = function (url, type, callback, data) {
+var xhrScreepsRequest = function (url, type, callback, data, basicAuth) {
   var xhr = new XMLHttpRequest();
   xhr.onload = function () {
     var newToken = this.getResponseHeader('X-Token');
@@ -36,8 +49,13 @@ var xhrScreepsRequest = function (url, type, callback, data) {
     try { var reply = JSON.parse(this.responseText); } catch(e) { var reply = this.responseText; }
     callback(reply);
   };
-  xhr.open(type, url);
-  if (type == "POST") xhr.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+  if (basicAuth) {
+    xhr.open(type, url);
+    xhr.setRequestHeader("Authorization", "Basic " + btoa(basicAuth.user + ":" + basicAuth.password));
+  } else {
+    xhr.open(type, url);
+  }
+  if (type == "POST" && data) xhr.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
   if (xToken) {
     xhr.setRequestHeader('X-Username', xToken);
     xhr.setRequestHeader('X-Token', xToken);
@@ -50,17 +68,25 @@ var xhrScreepsRequest = function (url, type, callback, data) {
 };
 
 var doScreepsLogin = function(callback) {
-  xhrScreepsRequest(prefix + "auth/signin", 'POST', function(res) {
-	  	// console.log("LOGIN RESPONSE:");  
-      // console.log(JSON.stringify(res, null, 2));
-      console.log("Login to Screeps API was " + (res.token ? "successful." : "a catastrophic failure."));
-	  	xToken = res.token;
-	  	callback(res.token ? true : false);
-  }, { "email": localStorage.getItem('email'), "password": localStorage.getItem('password') });  
+  var emailAuth = null, basicAuth = null;
+  if (officialServer()) {
+    emailAuth = { "email": localStorage.getItem('email'), "password": localStorage.getItem('password') };
+    console.log("Login to official Screeps server via Email");
+  } else {
+    basicAuth = { "user" : localStorage.getItem('email'), "password": localStorage.getItem('password') };
+    console.log("Login to custom Screeps server via Basic Auth");
+  }
+  xhrScreepsRequest(getPrefix() + "auth/signin", 'POST', function(res) {
+    // console.log("LOGIN RESPONSE:");  
+    // console.log(JSON.stringify(res, null, 2));
+    console.log("Login to Screeps API was " + (res.token ? "successful." : "a catastrophic failure."));
+    xToken = res.token;
+    callback(res.token ? true : false);
+  }, emailAuth, basicAuth);
 }
 
 var doScreepsUnreadMessage = function(callback) {
-	xhrScreepsRequest(prefix + "user/messages/unread-count", 'GET', function(res) {
+	xhrScreepsRequest(getPrefix() + "user/messages/unread-count", 'GET', function(res) {
 		info.unreadMessages = (res.count ? res.count : 0);
 		console.log("Unread Message: " + info.unreadMessages)
 		callback();
@@ -69,7 +95,7 @@ var doScreepsUnreadMessage = function(callback) {
 
 /*
 var doScreepsAuthMe = function(callback) {
-	xhrScreepsRequest(prefix + "auth/me", 'GET', function(res) {
+	xhrScreepsRequest(getPrefix() + "auth/me", 'GET', function(res) {
 		info.email = res.email;
 		info.username = res.username;
 		info.maxCpu = res.cpu;
@@ -101,7 +127,7 @@ function GColor(base) {
 }
 
 var doScreepsMemory = function(callback) {
-	xhrScreepsRequest(prefix + "user/memory?path=pebble", 'GET', function(res) {
+	xhrScreepsRequest(getPrefix() + "user/memory?path=pebble", 'GET', function(res) {
 		if ( !res.ok ) {
 			callback(true);
 			return;
@@ -290,6 +316,7 @@ Pebble.addEventListener('webviewclosed', function(e) {
   console.log(JSON.stringify(dict, null, 2));
   console.log("Storing email in localStorage as '" + dict.CONFIG_EMAIL.value + "'");
   
+  localStorage.setItem('server', dict.CONFIG_SERVER.value);
   localStorage.setItem('email', dict.CONFIG_EMAIL.value);
   localStorage.setItem('password', dict.CONFIG_PASSWORD.value);  
   localStorage.setItem('use_weather', dict.CONFIG_USE_WEATHER.value);
